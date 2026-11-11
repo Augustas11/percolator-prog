@@ -89,7 +89,7 @@ Private host/SBF caches were copied from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target`; all subsequent
 writes used this task's private directories. Wrapper and hostile matcher were
 rebuilt locked/offline from this worktree using platform-tools v1.52. Engine pin:
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`. SHA-256:
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. SHA-256:
 
 - Wrapper: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 - Hostile matcher: `e0c20fad34a7822cc6ce42a3c77ff08a8591977102f0c497a339d66a9dd6240a`.

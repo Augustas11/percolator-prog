@@ -75,7 +75,7 @@ Private host dependencies were copied from
 `/dev/shm/percolator-main-host-target`. The SBF cache was copied from
 `/dev/shm/percolator-public-gap-20260916-c91e-sbf-target`, then the wrapper was
 rebuilt locked/offline from this worktree with tools v1.52 and engine
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`. Its SHA-256 is
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. Its SHA-256 is
 `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`, matching
 the current Row422 notes. This no-CPI selector needs no matcher fixture.
 

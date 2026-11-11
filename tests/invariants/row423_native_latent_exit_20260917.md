@@ -3,7 +3,7 @@
 Base: freshly fetched `origin/main`, `6ee17614f5e9fad1fdce11666b31dba3a33a3584`.
 Private worktree: `/dev/shm/astra-ultra-row423-native-exit-20260917`.
 Branch: `astra-ultra/row423-native-exit-20260917`; local commit only.
-Engine: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 
 ## Retained Increment
 

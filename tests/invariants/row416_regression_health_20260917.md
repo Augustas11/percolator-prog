@@ -80,7 +80,7 @@ actual rejection execution and exact Account frames. None is a production findin
 Private host/SBF caches were copied with `cp -a --reflink=auto` from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target` to
 `/dev/shm/percolator-row416-health-20260917-{host,sbf}-target`. SBF was rebuilt
-locked/offline against current engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+locked/offline against current engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 The auth matcher was copied from main's ignored fixture deployment. No tracked
 fixture, dependency, production or status file changed.
 

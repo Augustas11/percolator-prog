@@ -61,7 +61,7 @@ The final public continuation resolves each; no production change was needed.
 
 Wrapper and hostile matcher rebuilt locked/offline from this worktree using
 platform-tools v1.52 and private `/dev/shm` targets. Engine pin:
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`. Private caches were initially copied
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. Private caches were initially copied
 from `percolator-public-gap-20260916-c91e-{host,sbf}-target` (no shared writes).
 SHA-256:
 

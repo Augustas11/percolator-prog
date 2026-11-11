@@ -3,7 +3,7 @@
 Base: freshly fetched `origin/main`, `26c11a568c6fd72f16a20119f209994b7f24bee0`.
 Worktree: `/dev/shm/percolator-row419435-health-20260917`.
 Branch: `worker/row419435-health-20260917`.
-Engine pin: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine pin: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 
 ## Scope and decision
 

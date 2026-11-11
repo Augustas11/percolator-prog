@@ -20,7 +20,7 @@ The relevant production rules are `collect_maintenance_fee_before_trade_view` in
 `src/v16_program.rs`, the pinned engine's `sync_account_fee_to_slot_not_atomic`
 and `consume_domain_insurance_for_negative_pnl`, and the wrapper's
 `handle_withdraw_insurance_asset` epoch advance. The engine pin remains
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 
 ## Exact verification
 

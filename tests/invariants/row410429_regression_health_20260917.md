@@ -89,7 +89,7 @@ compile also required an explicit closure parameter type. No runtime history or
 economic assertion was removed to obtain a pass.
 
 Private host/SBF caches were copied, then the wrapper was rebuilt locked/offline
-against current source and engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+against current source and engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Fresh SBF SHA-256:
 `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 No matcher SBF is needed by this bilateral-trade fixture. The host build passes

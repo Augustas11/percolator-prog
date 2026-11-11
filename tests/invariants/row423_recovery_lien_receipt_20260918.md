@@ -65,7 +65,7 @@ also use a private cache. The unchanged history helper requires its fixed matche
 artifact path, so validation used a byte-identical cached matcher binary there;
 no fixture source or tracked fixture file was edited.
 
-- Engine pin: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+- Engine pin: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 - Wrapper SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 - Matcher SHA-256: `50e532267926e180f013200c1799e26127dd23dc150866cffd491424629ddf93`.
 

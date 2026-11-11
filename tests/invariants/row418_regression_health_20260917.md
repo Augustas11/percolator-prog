@@ -91,7 +91,7 @@ Private host/SBF targets were copied with `cp -a --reflink=auto` from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target` to
 `/dev/shm/percolator-row418-health-20260917-{host,sbf}-target`.
 The current default-feature SBF was rebuilt locked/offline using platform-tools
-v1.52 and engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+v1.52 and engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 No matcher or tracked fixture changes were needed.
 

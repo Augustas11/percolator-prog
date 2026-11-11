@@ -87,7 +87,7 @@ independently. Neither failure established a production mismatch.
 Private host/SBF caches were copied from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target`; wrapper and
 auth/hostile fixtures were built locked/offline with platform-tools v1.52.
-Engine pin: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine pin: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Logs: `/dev/shm/astra-ultra-row412-{sbf-build,auth-build,hostile-build,new-test,grant-control,partial-control}.log`.
 
 Artifact SHA-256:

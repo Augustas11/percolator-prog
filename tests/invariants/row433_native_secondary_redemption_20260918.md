@@ -54,7 +54,7 @@ Private host/SBF caches were copied with `cp -a --reflink=auto` from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target` to this worktree's
 `-host-target` / `-sbf-target` sibling paths. Default-feature SBF rebuilt
 locked/offline with platform-tools v1.52 in 7.95 seconds.
-Engine: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 SBF SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 
 Only N (new) and C (nearest existing control) ran, once each with `--exact`.

@@ -70,7 +70,7 @@ This was a test scheduling error, not a production regression or TDD fix claim.
 
 Private host/SBF caches copied from the existing public-gap caches. Wrapper and
 hostile matcher rebuilt locked/offline from this worktree with platform-tools
-v1.52. Engine pin: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+v1.52. Engine pin: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Commands below use the same environment and arguments as execution; logs are
 `/dev/shm/percolator-row411-followup-health-20260917-{sbf-build,matcher-build,check,check2}.log`.
 Builds pass; `check` is the scheduling failure and `check2` is the final PASS.

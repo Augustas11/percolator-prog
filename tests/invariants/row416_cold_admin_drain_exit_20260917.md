@@ -56,7 +56,7 @@ Production, Cargo, fixtures and TSVs remain unchanged; no row411 file is edited.
 
 Private host/SBF caches copied from `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target`.
 Wrapper and matcher rebuilt locked/offline with platform-tools v1.52 in this
-worktree's private SBF target; engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+worktree's private SBF target; engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Wrapper build 7.88s; matcher 13.93s; initial host compile 34.71s. No test failed.
 The initial green used a copied matcher; final green uses the rebuilt matcher.
 Existing Solana future-compatibility warning remains.

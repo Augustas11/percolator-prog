@@ -11,7 +11,7 @@ excluded from residual, and its later expiry increased the snapshot after the
 only claimant had lost its receipt. The baseline paid 1,250 instead of 1,750 and
 burned the remaining 500 tokens during slab closure.
 
-Engine commit `4db11a8cb0053815e23a35d3a7d3edc265d8d866`, directly based on
+Engine commit `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`, directly based on
 `94979ede7db934545e53a8f210dd063a9ea3ea63`, changes only `src/v16.rs`:
 
 - Retain a haircut receipt while fresh backing can still increase its rate.

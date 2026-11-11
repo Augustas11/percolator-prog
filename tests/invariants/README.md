@@ -210,7 +210,7 @@ debug-info host build was interrupted and replaced with the debug-free command
 below. Neither event is a production finding.
 
 The default-feature wrapper was rebuilt from this checkout with platform-tools
-v1.52 and engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`; SBF SHA-256:
+v1.52 and engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`; SBF SHA-256:
 `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Exact successful commands from the isolated worktree:
 
@@ -1001,7 +1001,7 @@ Recovery, arbitrary-history or unavailable-administrator retirement coverage.
 No production bug, engine proof, broad-suite run or status promotion is claimed.
 Scoped formatting, whitespace and protected-path checks pass.
 
-Base: `a1d33c58`; engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Base: `a1d33c58`; engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Private host/SBF/auth caches were copied from the preceding source-owner run.
 Locked/offline wrapper and auth-matcher rebuilds use platform-tools v1.52.
 SHA-256: wrapper `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`,
@@ -1053,7 +1053,7 @@ Validation base: `a657d195b3bd982e5800daddbfe235f22acc19a6`. Private worktree
 `/dev/shm/percolator-inv-source-host-20260918151208`, SBF target
 `/dev/shm/percolator-inv-source-sbf-20260918151208`. Locked/offline wrapper and
 auth-matcher builds use platform-tools v1.52 and engine
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`. Artifact SHA-256:
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. Artifact SHA-256:
 wrapper `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`,
 matcher `50e532267926e180f013200c1799e26127dd23dc150866cffd491424629ddf93`.
 
@@ -1291,7 +1291,7 @@ in the test's CloseSlab account list; the existing custody convention supplies i
 Base: fetched `origin/main`, `a1a3ff3bc1a6cf786a361c75cb131c305149c6e9`.
 Private worktree: `/dev/shm/percolator-row424-pending-native-scan-20260918`.
 The wrapper was rebuilt locked/offline here using platform-tools v1.52 and engine
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`; SHA-256:
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`; SHA-256:
 `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Private host/SBF caches were copied from `percolator-public-gap-20260916-c91e`.
 Each exact selector below passes **1/1**, with peaks **220,026 / 221,437 / 221,526 CU**
@@ -1454,7 +1454,7 @@ retirement. Owner portfolio deletion and administrative normalization/retirement
 retain their existing signers. No production bug or production change is claimed.
 
 Base: `a657d195b3bd982e5800daddbfe235f22acc19a6`; engine
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`. Isolated worktree:
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. Isolated worktree:
 `/dev/shm/percolator-inv-agent-terminal-20260918151208`.
 Default-feature wrapper SBF was rebuilt from this worktree using private copied
 caches and platform-tools v1.52; SHA-256:
@@ -2093,7 +2093,7 @@ Rows 416/422 and invariant statuses stay unchanged; no production bug is claimed
 
 Validation base: `a657d195b3bd982e5800daddbfe235f22acc19a6`. Private copied caches;
 the default-feature wrapper was rebuilt locked/offline using platform-tools v1.52
-and engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`. SBF SHA-256:
+and engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. SBF SHA-256:
 `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Only this README and the existing invariant file change. No broad suite ran.
 
@@ -2152,7 +2152,7 @@ initial funding/configuration and opening/discovery trades are outside these pea
 Private host/SBF caches were copied from `percolator-main-host-target` and
 `percolator-public-gap-20260916-c91e-sbf-target`. The default SBF was rebuilt
 locked/offline with platform-tools v1.52 and engine
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`; SHA-256
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`; SHA-256
 `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 
 ```bash
@@ -2468,7 +2468,7 @@ source liens, Recovery, or unavailable-authority retirement. INV-077 and rows
 Validation is confined to exact selectors, scoped rustfmt and patch whitespace
 checks. Default-feature SBF is freshly rebuilt with platform-tools v1.52 on base
 `601f8b7dfa2a905e25226f1833286ddf4f97c4c8`, engine
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`; SBF SHA-256:
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`; SBF SHA-256:
 `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 
 The final isolated new selector is **1 passed / 0 failed**, 1,504 filtered,

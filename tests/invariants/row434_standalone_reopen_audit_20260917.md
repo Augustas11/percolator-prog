@@ -2,7 +2,7 @@
 
 Base: `9e39d78c2a7b5bd60d7017c5471e6c3177b70035` (`origin/main` at worktree creation).
 Worktree: `/dev/shm/percolator-row413434-health-20260917`.
-Engine observed in the fresh build: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine observed in the fresh build: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Owner: [cu/inv_027_generated_flat_fee_entitlement.rs](cu/inv_027_generated_flat_fee_entitlement.rs),
 mounted under `inv_027_protected_principal_seniority::joint_admission_liabilities::generated_flat_fee_entitlement`.
 

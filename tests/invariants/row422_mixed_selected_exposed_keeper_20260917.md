@@ -59,7 +59,7 @@ The private SBF is copied from
 Its SHA-256 matches the rebuilt current-engine artifact in both existing row422
 notes: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Production source and Cargo files have no difference from their documented
-`4ab515f3` base. Engine: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+`4ab515f3` base. Engine: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Host dependencies were copied to a private target and the test compiled here.
 This single no-CPI route needs no matcher fixture or fixture changes.
 

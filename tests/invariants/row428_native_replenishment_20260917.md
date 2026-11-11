@@ -112,7 +112,7 @@ secondary liquidity disposition and slab/ledger retirement are not exercised.
 
 Private copies of dependency caches were used. Host and SBF code were rebuilt
 from this checkout; no matcher is needed. Engine pin:
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 SBF SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Logs: `/dev/shm/astra-row428-20260917-{sbf,test,controls}.log`.
 

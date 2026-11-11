@@ -45,7 +45,7 @@ Guardrails: 500,000 / 600,000 CU. No other selector or broad suite ran.
 
 Host/SBF caches were privately copied from the `percolator-public-gap-20260916-c91e`
 targets; current SBF was rebuilt offline with platform-tools v1.52 and `--locked`.
-Engine pin: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine pin: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Wrapper SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 No matcher is used. Logs are the worktree path plus `-sbf.log` / `-test.log`.
 

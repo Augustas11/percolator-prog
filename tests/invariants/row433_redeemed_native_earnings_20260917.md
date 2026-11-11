@@ -66,7 +66,7 @@ Private host/SBF caches were copied with `cp -a --reflink=auto` from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target` into the task root.
 The wrapper and pinned engine were rebuilt from this worktree, locked/offline,
 with default features and platform-tools v1.52; build completed in 7.87 seconds.
-Engine: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 SBF SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Logs and targets remain outside tracked files under the worktree's parent.
 

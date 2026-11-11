@@ -51,7 +51,7 @@ rollbacks, four empty-role handoffs and twenty owner exits.
 
 The existing 1,400,000-CU limit is unchanged. Failed-transaction CU is not measured.
 The wrapper was rebuilt locked/offline from this worktree with platform-tools
-v1.52 and pinned engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`. Private host/SBF
+v1.52 and pinned engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. Private host/SBF
 caches were copied from `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target`.
 The ignored matcher target links to the existing main-worktree fixture artifact.
 

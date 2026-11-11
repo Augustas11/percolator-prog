@@ -80,7 +80,7 @@ composition dimensions. No row425/426 or row419/435 file was edited.
 All commands below ran in the isolated worktree except fetch/worktree creation,
 which ran in `/dev/shm/percolator-main-merge-20260916`. Private copies of existing
 dependency caches were used; SBF and host tests were rebuilt from this checkout.
-No matcher artifact is needed. Engine pin: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+No matcher artifact is needed. Engine pin: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 SBF SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Logs: `/dev/shm/percolator-row428-health-20260917-{sbf,test}.log`.
 

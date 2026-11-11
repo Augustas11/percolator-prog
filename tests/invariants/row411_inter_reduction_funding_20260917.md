@@ -64,7 +64,7 @@ Each selector also checks eight successful nonmutating simulations. All measured
 transactions remain under 500,000 CU; this is not a maximum-shape claim.
 
 Wrapper and hostile matcher rebuilt locked/offline from this worktree using
-platform-tools v1.52, engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+platform-tools v1.52, engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Private host/SBF targets were copied without hard links from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target`; matcher build
 target is `$R-matcher-target`. Artifact SHA-256:

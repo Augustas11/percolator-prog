@@ -57,7 +57,7 @@ dependencies and platform-tools v1.52, using a private copy of the existing SBF
 cache. A private host cache was also copied. Neither selected scenario needs a
 matcher; no fixture files or generated fixture paths were changed.
 
-- Engine: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+- Engine: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 - Wrapper SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 
 ```bash

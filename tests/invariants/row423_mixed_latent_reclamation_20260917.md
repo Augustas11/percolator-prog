@@ -2,7 +2,7 @@
 
 Base: fetched `origin/main`, `f6fd96e43b1cf487874f34fa157737b69509182c`.
 Worktree: `/dev/shm/percolator-row423-latent-competition-20260917`.
-Engine: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 
 ## Increment and duplicate analysis
 

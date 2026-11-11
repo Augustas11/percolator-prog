@@ -95,7 +95,7 @@ oracle failures in separate runs. With the final Rust changes, both pass 1/1:
 
 Peaks exclude setup; the reused helper enforces 1,200,000 CU and the 1,232-byte
 packet limit. Default-feature SBF was rebuilt locked/offline in a private copied
-cache against engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+cache against engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 SBF SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 No matcher is needed. The existing Solana future-compatibility warning remains.
 

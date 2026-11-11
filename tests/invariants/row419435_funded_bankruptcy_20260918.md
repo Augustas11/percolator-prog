@@ -2,7 +2,7 @@
 
 Base: `origin/main` at `e250138435490c115d87c8edd9500f331fa13131`.
 Worktree: `/dev/shm/astra-ultra-row419435-pending-conformance-20260918`.
-Engine: `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+Engine: `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 Local test/docs-only increment; no push or production/dependency/status edits.
 
 ## Nonduplication

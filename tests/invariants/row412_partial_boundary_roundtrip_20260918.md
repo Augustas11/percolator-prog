@@ -64,7 +64,7 @@ Both exact selectors pass, each running one test with 1,486 filtered out:
 These are bounded transaction measurements excluding bootstrap, not worst-case
 CU claims. The wrapper and both unchanged matcher fixtures were rebuilt
 locked/offline with platform-tools v1.52 using private copied caches. Engine pin:
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 
 Artifact SHA-256:
 

@@ -54,7 +54,7 @@ The new history has a 200,000 CU ceiling; address-dependent CU can vary.
 
 Private dependency-cache copies were used; SBF and host code were rebuilt from
 this checkout, locked/offline. No matcher is needed. Engine pin:
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 SBF SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Logs: `/dev/shm/astra-ultra-row428-coverage-20260918-{sbf,new,control}.log`.
 

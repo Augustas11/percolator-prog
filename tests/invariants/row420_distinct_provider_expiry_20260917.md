@@ -52,7 +52,7 @@ normalization and retirement retain their existing signers.
 ## Exact validation
 
 Default-feature private SBF rebuilt from this worktree, locked/offline with
-platform-tools v1.52 and engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`.
+platform-tools v1.52 and engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`.
 SBF SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Private host/SBF targets were copied with `cp -a --reflink=auto` from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target`.

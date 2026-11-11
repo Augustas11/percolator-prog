@@ -53,7 +53,7 @@ Both use the existing 400,000-CU bound. Peaks include fixture user-payout cleanu
 and campaign transactions, including failures; earlier construction is excluded.
 Private host/SBF caches were copied from `percolator-public-gap-20260916-c91e`.
 SBF was rebuilt here locked/offline using platform-tools v1.52 and the unchanged
-engine `4db11a8cb0053815e23a35d3a7d3edc265d8d866`. Wrapper SHA-256:
+engine `b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. Wrapper SHA-256:
 `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 Logs: `/dev/shm/astra-ultra-row424-coverage-20260918-logs/{build-sbf,new,control}.log`.
 

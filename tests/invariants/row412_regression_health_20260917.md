@@ -76,7 +76,7 @@ endpoint. This was a test setup correction, not a production fix or TDD bug clai
 
 Private host/SBF caches were copied, then wrapper and auth matcher rebuilt from
 this checkout, locked/offline, using platform-tools v1.52. Engine pin:
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866`. Builds pass. Logs share prefix
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656`. Builds pass. Logs share prefix
 `/dev/shm/percolator-row412-health-20260917-`: `sbf-build.log`, `matcher-build.log`,
 `check.log` (initial setup failure), `check2.log` (final PASS).
 

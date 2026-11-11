@@ -50,7 +50,7 @@ Private host/SBF targets were copied with `cp -a --reflink=auto` from
 `/dev/shm/percolator-public-gap-20260916-c91e-{host,sbf}-target` to
 `/dev/shm/percolator-row422-health-20260917-{host,sbf}-target`. The wrapper was
 rebuilt locked/offline with the existing v1.52 toolchain and current engine
-`4db11a8cb0053815e23a35d3a7d3edc265d8d866` from Cargo's local cache.
+`b22bef7d6122fd7d82680ce9859e8b77fd8ef656` from Cargo's local cache.
 Wrapper SHA-256: `a17c5dfa31c081067bdb7bdaab0543e25cf5563cf727762c41b9287d78bc8628`.
 The auth matcher was copied from main's fixture deployment to the same relative
 path here; SHA-256: `50e532267926e180f013200c1799e26127dd23dc150866cffd491424629ddf93`.
