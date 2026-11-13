@@ -258,9 +258,18 @@ fn v16_program_public_b_prerequisite_preserves_later_liquidation_progress() {
     let b_after = active_leg_for_asset(&after_b, 1);
     assert!(b_after.b_snap > b_before.b_snap);
     assert!(b_after.b_snap <= target_b);
+    // SettleB first settles the account's pending K/F (engine #172 fix), so
+    // the adverse leg's K/F snapshots may advance. Everything else on it
+    // (position, weight, B state) must stay untouched.
+    let adverse_after_b = active_leg_for_asset(&after_b, 0);
     assert_eq!(
-        active_leg_for_asset(&after_b, 0),
-        adverse_before,
+        adverse_after_b,
+        percolator::PortfolioLegV16 {
+            k_snap: adverse_after_b.k_snap,
+            f_snap: adverse_after_b.f_snap,
+            kf_epoch_snap: adverse_after_b.kf_epoch_snap,
+            ..adverse_before
+        },
         "B settlement must frame the independent adverse leg"
     );
     assert_eq!(
