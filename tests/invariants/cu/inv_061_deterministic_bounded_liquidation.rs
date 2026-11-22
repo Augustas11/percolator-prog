@@ -812,12 +812,19 @@ fn v16_program_reset_carry_liquidation_matrix_preserves_progress() {
         percolator::SOCIAL_LOSS_DEN - 121_035
     );
     let before_owner_reduction = env.market_state().1;
-    // With the #172 SettleB fix, SettleB settles l1's pending K/F first, so its share of s1's
-    // bankruptcy lands on the gain it offsets: l1 carries no outstanding B loss into its owner
-    // exit, and the cure below has nothing to cure (no backing spent, no receivable).
+    // This pins the engine fork's outcome (upstream 80f8f0b4 + the #172 SettleB K/F-first
+    // patch). SettleB settles l1's pending K/F first, so its share of s1's bankruptcy nets
+    // against that gain: l1 enters its owner exit with capital 1000 and pnl +7, and no cure
+    // follows (no backing spent, no receivable).
+    // Measured on unmodified upstream (wrapper ebcded58 + engine 80f8f0b4), the same scenario
+    // enters the exit with pnl -2, ends with l1 at 1006, vault 6007 against C_tot 6005 (2 atoms
+    // no one can withdraw), and the provider refills 17 and withdraws 17. With the patch those
+    // 2 atoms are paid out: +1 to l1 (1007) and +1 to the provider (refills 18, withdraws 19).
     let short_source = usize::from(ASSET) * 2 + 1;
-    assert!(
-        env.portfolio_state(l1).pnl.get() >= 0,
+    let l1_before_exit = env.portfolio_state(l1);
+    assert_eq!(
+        (l1_before_exit.capital.get(), l1_before_exit.pnl.get()),
+        (1_000, 7),
         "SettleB nets l1's B share against its settled K/F gain"
     );
     let cured_num = 0u128;
@@ -865,9 +872,8 @@ fn v16_program_reset_carry_liquidation_matrix_preserves_progress() {
         carry_state.assets[ASSET as usize].social_loss_dust_long_num,
         percolator::SOCIAL_LOSS_DEN - 121_035
     );
-    // Engine #172: the backed gain l1 realizes on exit cures that outstanding loss instead of
-    // being burned. The cure consumes fresh counterparty backing atom for atom and records the
-    // matching provider receivable; only the remainder of the gain becomes a claim.
+    // l1 had no B loss outstanding, so its exit cures nothing: no fresh counterparty backing is
+    // consumed, no provider receivable is recorded, and its whole gain stays a claim.
     let cured_source = carry_state.source_credit[short_source];
     assert_eq!(
         (
@@ -901,8 +907,8 @@ fn v16_program_reset_carry_liquidation_matrix_preserves_progress() {
         ASSET as usize
     ));
     assert!(health_cert(&env.portfolio_state(s2)).certified_liq_deficit != 0);
-    // s2's realized loss lands as fresh loser-paid backing, which first refills the receivable
-    // the cure left behind. Spent backing is a cumulative audit counter, so it keeps the cure.
+    // s2's realized loss lands as fresh loser-paid backing. With no cure before it there is no
+    // receivable to refill and nothing has been spent yet.
     let repaid_source = env.market_state().1.source_credit[short_source];
     assert_eq!(repaid_source.provider_receivable_num, 0);
     assert_eq!(repaid_source.spent_backing_num, cured_num);
@@ -1161,15 +1167,15 @@ fn v16_program_reset_carry_liquidation_matrix_preserves_progress() {
     assert_eq!(source.positive_claim_bound_num, 0);
     assert_eq!(source.exact_positive_claim_num, 0);
     assert!(source.provider_receivable_num > 0);
-    // The terminal conversions drew the outstanding receivable from the refilled bucket, so
-    // only the cure that s2's loss already repaid (#172) separates the cumulative spent audit
-    // from it.
+    // The terminal conversions drew the outstanding receivable from the bucket. With no cure
+    // earlier, the cumulative spent audit equals that receivable.
     assert_eq!(
         source.spent_backing_num,
         source.provider_receivable_num + cured_num
     );
     assert_eq!(source.provider_receivable_num % BOUND_SCALE, 0);
     let refill_atoms = source.provider_receivable_num / BOUND_SCALE;
+    assert_eq!(refill_atoms, 18, "the provider refills 18");
     let refill_expiry =
         provider_obligated.source_backing_buckets[source_domain as usize].expiry_slot;
     env.top_up_backing_bucket(source_domain, refill_atoms, refill_expiry);
@@ -1184,6 +1190,7 @@ fn v16_program_reset_carry_liquidation_matrix_preserves_progress() {
     );
     assert_eq!(refilled_source.fresh_reserved_backing_num % BOUND_SCALE, 0);
     let provider_principal = refilled_source.fresh_reserved_backing_num / BOUND_SCALE;
+    assert_eq!(provider_principal, 19, "the provider withdraws 19");
     let provider_token = env.token_account(env.admin.pubkey(), 0);
     assert!(
         provider_ready.bankruptcy_hlock_active,
@@ -1277,6 +1284,12 @@ fn v16_program_reset_carry_liquidation_matrix_preserves_progress() {
         env.svm.get_account(&env.vault).unwrap(),
         custody_before_retirement
     );
+    // The patched outcome: l1 ends at 1007 and nothing is stranded (upstream: 1006, and vault
+    // 6007 against C_tot 6005).
+    assert_eq!(env.portfolio_state(l1).capital.get(), 1_007);
+    assert_eq!((retired.vault, retired.c_tot), (6_006, 6_006));
+    assert_eq!(retired.vault, retired.c_tot + retired.insurance);
+    assert_eq!(retired.vault, u128::from(env.token_amount(env.vault)));
 }
 
 #[test]
