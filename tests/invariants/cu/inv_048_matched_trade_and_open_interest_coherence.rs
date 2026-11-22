@@ -425,7 +425,7 @@ fn v16_program_typed_matched_book_obligation_oracle_is_source_complete() {
 
 #[test]
 fn v16_program_position_mutation_composition_is_source_complete() {
-    const ENGINE_PIN: &str = "80f8f0b494e84f191c5a10463b9e10fc19156af4";
+    const ENGINE_PIN: &str = "605a89a2a06064fb66f8b4bd35ed6842ff4e72b1";
     const ENGINE_CONTRACTS: &[&str] = &[
         "contract_check_kernel_attach_leg",
         "contract_check_kernel_resize_leg_same_side",

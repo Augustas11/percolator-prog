@@ -554,7 +554,7 @@ struct Inv040FeeIngress {
 
 #[test]
 fn v16_program_internal_fee_ingress_is_engine_owned_and_publicly_witnessed() {
-    const ENGINE_PIN: &str = "80f8f0b494e84f191c5a10463b9e10fc19156af4";
+    const ENGINE_PIN: &str = "605a89a2a06064fb66f8b4bd35ed6842ff4e72b1";
     const ROWS: &[Inv040FeeIngress] = &[
         Inv040FeeIngress {
             owner: "collect_maintenance_fee_to_slot_before_value_debit_view",

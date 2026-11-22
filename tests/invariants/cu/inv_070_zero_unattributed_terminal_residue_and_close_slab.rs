@@ -2920,7 +2920,7 @@ fn inv070_braced_body_after<'a>(source: &'a str, marker: &str) -> &'a str {
 
 #[test]
 fn v16_program_terminal_stock_and_close_slab_composition_is_source_complete() {
-    const ENGINE_PIN: &str = "80f8f0b494e84f191c5a10463b9e10fc19156af4";
+    const ENGINE_PIN: &str = "605a89a2a06064fb66f8b4bd35ed6842ff4e72b1";
     const CLASSES: &[Inv070TerminalCompositionClass] = &[
         Inv070TerminalCompositionClass {
             class: "unsettled accounts, capital, positive claims, and payout receipts",

@@ -580,7 +580,7 @@ fn v16_program_native_full_source_reservation_preserves_rollback_and_redeemable_
         DOMAINS
     );
     assert!(
-        include_str!("../../../Cargo.lock").contains("80f8f0b494e84f191c5a10463b9e10fc19156af4")
+        include_str!("../../../Cargo.lock").contains("605a89a2a06064fb66f8b4bd35ed6842ff4e72b1")
     );
     let mut maxima = [0; 2];
     let mut totals = [0; 3];
