@@ -812,13 +812,15 @@ fn v16_program_reset_carry_liquidation_matrix_preserves_progress() {
         percolator::SOCIAL_LOSS_DEN - 121_035
     );
     let before_owner_reduction = env.market_state().1;
-    // l1 still owes its share of s1's bankruptcy as an outstanding B loss. The short-side source
-    // domain holds only loser-paid fresh backing at par, more than enough to cover that loss.
+    // With the #172 SettleB fix, SettleB settles l1's pending K/F first, so its share of s1's
+    // bankruptcy lands on the gain it offsets: l1 carries no outstanding B loss into its owner
+    // exit, and the cure below has nothing to cure (no backing spent, no receivable).
     let short_source = usize::from(ASSET) * 2 + 1;
-    let l1_outstanding_loss = u128::try_from(-env.portfolio_state(l1).pnl.get())
-        .expect("l1 must carry a B loss into its owner exit");
-    assert!(l1_outstanding_loss > 0);
-    let cured_num = l1_outstanding_loss * BOUND_SCALE;
+    assert!(
+        env.portfolio_state(l1).pnl.get() >= 0,
+        "SettleB nets l1's B share against its settled K/F gain"
+    );
+    let cured_num = 0u128;
     let source_before_cure = before_owner_reduction.source_credit[short_source];
     let bucket_before_cure = before_owner_reduction.source_backing_buckets[short_source];
     assert_eq!(
