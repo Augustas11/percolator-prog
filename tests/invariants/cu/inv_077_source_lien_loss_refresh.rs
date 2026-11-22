@@ -946,5 +946,248 @@ fn v16_program_fourteen_leg_loss_over_claims_in_lapsed_domains_is_bounded() {
     println!("INV-077 fourteen-leg lapsed-claim loss CU: open={open_cu}, refresh={refresh_cu}");
 }
 
+/// The SettleB chunk at its costliest reachable shape. Before it books a B share,
+/// SettleB settles the account's pending K/F (engine #172 fix), and that runs
+/// `reconcile_account_impaired_counterparty_liens_not_atomic` over every source
+/// slot, which expires every lapsed Fresh bucket behind a liened claim in the one
+/// call: the per-domain work Refresh spreads over one crank a bucket.
+///
+/// Fourteen legs with liened claims cannot be built: the wrapper refuses a trade
+/// that takes `liened claims + 6 * legs` past 72 once any claim is liened, and only
+/// trades create liens, so a liened portfolio holds at most 11 legs and one with
+/// all 28 claims liened at most 7. This builds the latter, which has the most
+/// lapsed liened buckets: 7 longs margined by all 28 claims (28 + 42 = 70). On
+/// every asset the LP buys from a short that goes bankrupt on the move from 100
+/// to 201, beside a solvent long/short pair that keeps the short side open (so
+/// the long side is not reset). Every leg then carries an unsettled K/F gain of
+/// 101 a unit and a pending B share of its bankrupt short's deficit of one atom a
+/// unit. The clock then passes the expiry of all 28 provider buckets, and the
+/// LP's next crank is SettleB.
+#[test]
+fn v16_program_settle_b_over_every_lapsed_lien_with_pending_kf_on_every_leg_is_bounded() {
+    const LIMIT: u64 = 1_375_000;
+    const LEGS: u16 = 7;
+    /// Asset 0's bankrupt short takes the LP's margin to all 28 claims' 28,000.
+    const BANKRUPT_UNITS: [i128; LEGS as usize] = [280, 40, 40, 40, 40, 40, 40];
+    /// A solvent long and short on every asset.
+    const SOLVENT_UNITS: i128 = 40;
+    const SOLVENT_CAPITAL: u128 = 1_000_000;
+    const BANKRUPT_PRICE: u64 = 201;
+    /// The fixture ends at slot 28 and the two mark moves take slots 29 and 30.
+    const BACKING_EXPIRY_SLOT: u64 = 31;
+    let mut pair = all_source_lien_pair_with_backing_expiry(BACKING_EXPIRY_SLOT);
+    assert_eq!(pair.slot, 28);
+    let lp_owner = pair.lp_owner.insecure_clone();
+    let solvent_long_owner = Keypair::new();
+    let solvent_long = pair.env.create_portfolio(&solvent_long_owner);
+    pair.env
+        .deposit(&solvent_long_owner, solvent_long, SOLVENT_CAPITAL);
+    let solvent_short_owner = Keypair::new();
+    let solvent_short = pair.env.create_portfolio(&solvent_short_owner);
+    pair.env
+        .deposit(&solvent_short_owner, solvent_short, SOLVENT_CAPITAL);
+    // The fixture left the assets' accrual behind the clock, and a second
+    // risk-increasing trade on a lagging asset is refused (EngineLockActive).
+    // Carry the seven forward first; each crank takes one slot.
+    let observer = pair.env.create_portfolio(&Keypair::new());
+    for asset_index in 0..LEGS {
+        for _ in 0..2 * pair.slot {
+            if pair.env.market_state().1.assets[usize::from(asset_index)].slot_last >= pair.slot {
+                break;
+            }
+            pair.env.crank(
+                observer,
+                ProgInstruction::PermissionlessCrank {
+                    now_slot: pair.slot,
+                    observations: crank_observations(asset_index),
+                },
+            );
+        }
+        assert_eq!(
+            pair.env.market_state().1.assets[usize::from(asset_index)].slot_last,
+            pair.slot
+        );
+    }
+    for asset_index in 0..LEGS {
+        // A solvent pair on the same asset keeps the short side open once the
+        // bankrupt short is gone, so the long side is not reset.
+        pair.env.svm.expire_blockhash();
+        pair.env
+            .try_trade_asset_with_cu(
+                asset_index,
+                &solvent_long_owner,
+                solvent_long,
+                &solvent_short_owner,
+                solvent_short,
+                SOLVENT_UNITS * POS_SCALE as i128,
+                PRICE_LOW,
+                0,
+            )
+            .unwrap_or_else(|error| panic!("solvent pair on {asset_index}: {error}"));
+    }
+    let mut shorts = Vec::new();
+    for (asset_index, bankrupt_units) in BANKRUPT_UNITS.iter().enumerate() {
+        // The bankrupt short opens at 100 with exactly its 100% initial margin.
+        let short_owner = Keypair::new();
+        let short = pair.env.create_portfolio(&short_owner);
+        pair.env.deposit(
+            &short_owner,
+            short,
+            *bankrupt_units as u128 * u128::from(PRICE_LOW),
+        );
+        pair.env.svm.expire_blockhash();
+        pair.env
+            .try_trade_asset_with_cu(
+                asset_index as u16,
+                &lp_owner,
+                pair.lp,
+                &short_owner,
+                short,
+                bankrupt_units * POS_SCALE as i128,
+                PRICE_LOW,
+                0,
+            )
+            .unwrap_or_else(|error| panic!("LP long from the short on {asset_index}: {error}"));
+        shorts.push(short);
+        if asset_index == 0 {
+            // The first trade, with no capital in the account, liens the one
+            // claim the fixture left unliened. Every later trade is margined by
+            // the redeposited capital, and no crank touches the LP, which would
+            // release liens it no longer needs.
+            assert_eq!(liened_sources(&pair.env.portfolio_state(pair.lp)), SOURCES);
+            pair.redeposit_capital();
+        }
+    }
+    let opened = pair.env.portfolio_state(pair.lp);
+    assert_eq!(opened.capital.get(), pair.capital);
+    assert_eq!(
+        percolator::active_bitmap_count_ones(active_bitmap(&opened)),
+        u32::from(LEGS)
+    );
+    assert_eq!(liened_sources(&opened), SOURCES);
+    assert!(SOURCES + LEG_WEIGHT * usize::from(LEGS) <= MAX_WORK);
+    assert!(SOURCES + LEG_WEIGHT * (usize::from(LEGS) + 1) > MAX_WORK);
+
+    pair.move_marks(&[150; LEGS as usize]);
+    pair.move_marks(&[BANKRUPT_PRICE; LEGS as usize]);
+    for (asset_index, short) in shorts.iter().enumerate() {
+        for _ in 0..8 {
+            if !has_active_leg_for_asset(&pair.env.portfolio_state(*short), asset_index) {
+                break;
+            }
+            // Each call first carries the asset's accrual forward a bounded step.
+            pair.env.crank_steps_after_market_catchup(
+                *short,
+                ProgInstruction::PermissionlessCrank {
+                    now_slot: pair.slot,
+                    observations: crank_observations(asset_index as u16),
+                },
+                1,
+            );
+        }
+        assert!(!has_active_leg_for_asset(
+            &pair.env.portfolio_state(*short),
+            asset_index
+        ));
+    }
+    // One more slot at the same marks: every provider bucket has lapsed, and no
+    // crank has touched the LP since it opened its legs.
+    pair.move_marks(&[BANKRUPT_PRICE; LEGS as usize]);
+    assert_eq!(pair.slot, BACKING_EXPIRY_SLOT);
+
+    let before = pair.env.portfolio_state(pair.lp);
+    let group_before = pair.env.market_state().1;
+    assert_eq!(group_before.mode, MarketModeV16::Live);
+    assert_eq!(
+        before
+            .source_domains
+            .iter()
+            .filter(|source| source.source_lien_counterparty_backing_num.get() != 0)
+            .count(),
+        SOURCES,
+        "every claim carries a counterparty lien"
+    );
+    for domain in 0..SOURCES {
+        let bucket = group_before.source_backing_buckets[domain];
+        assert_eq!(
+            bucket.status,
+            BackingBucketStatusV16::Fresh,
+            "domain {domain}"
+        );
+        assert!(
+            bucket.expiry_slot <= pair.slot,
+            "domain {domain} has lapsed"
+        );
+    }
+    for asset_index in 0..usize::from(LEGS) {
+        let leg = active_leg_for_asset(&before, asset_index);
+        let asset = group_before.assets[asset_index];
+        assert_eq!(leg.side, SideV16::Long);
+        assert_ne!(
+            leg.k_snap, asset.k_long,
+            "asset {asset_index} K/F is unsettled"
+        );
+        assert!(
+            leg.b_snap < asset.b_long_num,
+            "asset {asset_index} B is pending"
+        );
+    }
+
+    let settle_cu = pair
+        .env
+        .crank_if_actionable(
+            pair.lp,
+            ProgInstruction::PermissionlessCrank {
+                now_slot: pair.slot,
+                observations: vec![],
+            },
+        )
+        .expect("the B-stale LP's crank is SettleB");
+    assert_cu_within(
+        "SettleB over 28 lapsed liens and 7 legs of pending K/F",
+        settle_cu,
+        LIMIT,
+    );
+
+    let after = pair.env.portfolio_state(pair.lp);
+    let group_after = pair.env.market_state().1;
+    for asset_index in 0..usize::from(LEGS) {
+        assert_eq!(
+            active_leg_for_asset(&after, asset_index).k_snap,
+            group_after.assets[asset_index].k_long,
+            "SettleB settled asset {asset_index} K/F"
+        );
+    }
+    assert!(
+        (0..usize::from(LEGS)).any(|asset_index| {
+            active_leg_for_asset(&after, asset_index).b_snap
+                > active_leg_for_asset(&before, asset_index).b_snap
+        }),
+        "the call booked a B chunk"
+    );
+    for domain in 0..SOURCES {
+        assert_ne!(
+            group_after.source_backing_buckets[domain].status,
+            BackingBucketStatusV16::Fresh,
+            "SettleB expired lapsed domain {domain} behind a liened claim"
+        );
+    }
+    assert_eq!(after.capital.get(), pair.capital);
+    assert_eq!(
+        group_after.vault, group_before.vault,
+        "SettleB moves no custody"
+    );
+    assert_eq!(group_after.c_tot, group_before.c_tot);
+    assert_eq!(group_after.insurance, group_before.insurance);
+    assert_eq!(
+        group_after.vault,
+        u128::from(pair.env.token_amount(pair.env.vault))
+    );
+    assert!(group_after.vault >= group_after.c_tot + group_after.insurance);
+    println!(
+        "INV-077 SettleB over lapsed liens: legs={LEGS}, lapsed_liened_buckets={SOURCES}, cu={settle_cu}"
+    );
+}
+
 #[path = "inv_077_resolved_loss_settlement.rs"]
 mod resolved_loss_settlement;
