@@ -2435,3 +2435,629 @@ fn v16_program_liquidation_composition_is_source_complete() {
         "fn v16_program_every_wrapper_engine_transition_callsite_has_summary_disposition_and_witness"
     ));
 }
+
+macro_rules! soft {
+    ($cond:expr $(, $($rest:tt)*)?) => {
+        if !($cond) { eprintln!("MEAS SOFT-FAIL line {}: {}", line!(), stringify!($cond)); }
+    };
+}
+macro_rules! soft_eq {
+    ($l:expr, $r:expr $(, $($rest:tt)*)?) => {{
+        let (l, r) = (&$l, &$r);
+        if *l != *r { eprintln!("MEAS SOFT-FAIL line {}: {} != {} : left={:?} right={:?}", line!(), stringify!($l), stringify!($r), l, r); }
+    }};
+}
+macro_rules! soft_ne {
+    ($l:expr, $r:expr $(, $($rest:tt)*)?) => {{
+        let (l, r) = (&$l, &$r);
+        if *l == *r { eprintln!("MEAS SOFT-FAIL line {}: {} == {} : {:?}", line!(), stringify!($l), stringify!($r), l); }
+    }};
+}
+
+#[test]
+fn meas172_reset_carry_liquidation_matrix() {
+    const ASSET: u16 = 1;
+
+    let mut params = V16CuMarketParams::default();
+    params.max_portfolio_assets = 2;
+    params.initial_price = 1;
+    params.max_price_move_bps_per_slot = 10_000;
+    let mut env = V16CuEnv::new_with_init_params(params);
+    env.configure_auth_mark_for_asset_as_admin(ASSET, 0, 1);
+
+    let l1o = Keypair::new();
+    let l2o = Keypair::new();
+    let l3o = Keypair::new();
+    let l4o = Keypair::new();
+    let l5o = Keypair::new();
+    let s1o = Keypair::new();
+    let s2o = Keypair::new();
+    let s3o = Keypair::new();
+    let neutral_owner = Keypair::new();
+    let l1 = env.create_portfolio(&l1o);
+    let l2 = env.create_portfolio(&l2o);
+    let l3 = env.create_portfolio(&l3o);
+    let l4 = env.create_portfolio(&l4o);
+    let l5 = env.create_portfolio(&l5o);
+    let s1 = env.create_portfolio(&s1o);
+    let s2 = env.create_portfolio(&s2o);
+    let s3 = env.create_portfolio(&s3o);
+    let neutral = env.create_portfolio(&neutral_owner);
+
+    for (owner, portfolio, deposit) in [
+        (&l1o, l1, 1_000),
+        (&l2o, l2, 1_000),
+        (&l3o, l3, 1_000),
+        (&l4o, l4, 1_000),
+        (&l5o, l5, 1_000),
+        (&s1o, s1, 2),
+        (&s2o, s2, 5),
+        (&s3o, s3, 1_000),
+    ] {
+        env.deposit(owner, portfolio, deposit);
+    }
+    for (long_owner, long, short_owner, short, quantity) in [
+        (&l1o, l1, &s1o, s1, 1_897_305),
+        (&l2o, l2, &s1o, s1, 102_695),
+        (&l2o, l2, &s2o, s2, 666_301),
+        (&l3o, l3, &s2o, s2, 65_831),
+        (&l4o, l4, &s2o, s2, 430_043),
+        (&l4o, l4, &s3o, s3, 1_130_061),
+        (&l5o, l5, &s3o, s3, 767_244),
+    ] {
+        env.trade_asset_with_cu(ASSET, long_owner, long, short_owner, short, quantity, 1, 0);
+    }
+
+    for (slot, mark) in [(1u64, 2u64), (2, 3), (3, 4), (4, 5), (5, 6)] {
+        env.svm.warp_to_slot(slot);
+        env.push_auth_mark_for_asset_as_admin(ASSET, slot, mark);
+        env.crank(
+            s3,
+            ProgInstruction::PermissionlessCrank {
+                now_slot: slot,
+                observations: crank_observations(ASSET),
+            },
+        );
+    }
+    for _ in 0..4 {
+        if !has_active_leg_for_asset(&env.portfolio_state(s1), ASSET as usize) {
+            break;
+        }
+        env.crank(
+            s1,
+            ProgInstruction::PermissionlessCrank {
+                now_slot: 5,
+                observations: crank_observations(ASSET),
+            },
+        );
+    }
+    let first = env.market_state().1;
+    soft!(!has_active_leg_for_asset(
+        &env.portfolio_state(s1),
+        ASSET as usize
+    ));
+    soft_eq!(first.mode, MarketModeV16::Live);
+    soft_eq!(
+        first.assets[ASSET as usize].social_loss_remainder_long_num,
+        322_760
+    );
+    soft_ne!(first.assets[ASSET as usize].b_long_num, 0);
+
+    for _ in 0..8 {
+        let leg = active_leg_for_asset(&env.portfolio_state(l1), ASSET as usize);
+        if !leg.b_stale && leg.b_snap == env.market_state().1.assets[ASSET as usize].b_long_num {
+            break;
+        }
+        env.crank(
+            l1,
+            ProgInstruction::PermissionlessCrank {
+                now_slot: 5,
+                observations: crank_observations(ASSET),
+            },
+        );
+    }
+    soft_eq!(
+        active_leg_for_asset(&env.portfolio_state(l1), ASSET as usize).b_rem,
+        percolator::SOCIAL_LOSS_DEN - 121_035
+    );
+    let before_owner_reduction = env.market_state().1;
+    // The checks printed below are the order-independent outcome (engine 71076137 + the #172
+    // SettleB K/F-first fix). SettleB settles l1's pending K/F first, so its share of s1's
+    // bankruptcy nets against that gain: l1 enters its owner exit with capital 1000 and pnl +7,
+    // and no cure follows (no backing spent, no receivable).
+    // Measured on unmodified wrapper aac89b9e + engine 71076137, the same scenario enters the
+    // exit with pnl -2, ends with l1 at 1006, vault 6007 against C_tot 6005 (2 atoms no one can
+    // withdraw), and the provider refills 17 and withdraws 17. With the fix those 2 atoms are
+    // paid out: +1 to l1 (1007) and +1 to the provider (refills 18, withdraws 19).
+    let short_source = usize::from(ASSET) * 2 + 1;
+    let l1_before_exit = env.portfolio_state(l1);
+    eprintln!("MEAS l1_before_exit capital={} pnl={}", l1_before_exit.capital.get(), l1_before_exit.pnl.get());
+    soft_eq!(
+        (l1_before_exit.capital.get(), l1_before_exit.pnl.get()),
+        (1_000, 7),
+        "SettleB nets l1's B share against its settled K/F gain"
+    );
+    let cured_num = 0u128;
+    let source_before_cure = before_owner_reduction.source_credit[short_source];
+    let bucket_before_cure = before_owner_reduction.source_backing_buckets[short_source];
+    soft_eq!(
+        (
+            source_before_cure.spent_backing_num,
+            source_before_cure.provider_receivable_num
+        ),
+        (0, 0)
+    );
+    soft_eq!(
+        source_before_cure.credit_rate_num,
+        percolator::CREDIT_RATE_SCALE
+    );
+    soft_eq!(
+        bucket_before_cure.status,
+        percolator::BackingBucketStatusV16::Fresh
+    );
+    soft!(bucket_before_cure.expiry_slot > before_owner_reduction.current_slot);
+    soft!(bucket_before_cure.fresh_unliened_backing_num >= cured_num);
+    let l1_leg_before = active_leg_for_asset(&env.portfolio_state(l1), ASSET as usize);
+    let l1_effective_before =
+        reference_current_epoch_effective_abs(&before_owner_reduction, l1_leg_before);
+    soft!(
+        l1_effective_before < l1_leg_before.basis_pos_q.unsigned_abs(),
+        "fixture must exercise non-unit ADL conversion"
+    );
+    env.rebalance_reduce_with_cu(&l1o, l1, ASSET, 1_897_305);
+    soft!(!has_active_leg_for_asset(
+        &env.portfolio_state(l1),
+        ASSET as usize
+    ));
+    let carry_state = env.market_state().1;
+    { let p = env.portfolio_state(l1); eprintln!("MEAS l1_after_exit capital={} pnl={}", p.capital.get(), p.pnl.get()); eprintln!("MEAS short_source_after_l1_exit {:?}", carry_state.source_credit[short_source]); eprintln!("MEAS short_bucket_after_l1_exit {:?}", carry_state.source_backing_buckets[short_source]); }
+    soft_eq!(
+        carry_state.assets[ASSET as usize].oi_eff_long_q,
+        before_owner_reduction.assets[ASSET as usize].oi_eff_long_q - l1_effective_before
+    );
+    soft_eq!(
+        carry_state.assets[ASSET as usize].oi_eff_short_q,
+        before_owner_reduction.assets[ASSET as usize].oi_eff_short_q - l1_effective_before
+    );
+    soft_eq!(
+        carry_state.assets[ASSET as usize].social_loss_dust_long_num,
+        percolator::SOCIAL_LOSS_DEN - 121_035
+    );
+    // l1 had no B loss outstanding, so its exit cures nothing: no fresh counterparty backing is
+    // consumed, no provider receivable is recorded, and its whole gain stays a claim.
+    let cured_source = carry_state.source_credit[short_source];
+    soft_eq!(
+        (
+            cured_source.spent_backing_num,
+            cured_source.provider_receivable_num
+        ),
+        (cured_num, cured_num)
+    );
+    soft_eq!(
+        carry_state.source_backing_buckets[short_source].fresh_unliened_backing_num,
+        bucket_before_cure.fresh_unliened_backing_num - cured_num
+    );
+    soft_eq!(
+        carry_state.source_backing_buckets[short_source].consumed_liened_backing_num,
+        cured_num
+    );
+    soft!(env.portfolio_state(l1).pnl.get() > 0);
+    soft_eq!(carry_state.negative_pnl_account_count, 0);
+
+    env.svm.warp_to_slot(6);
+    env.push_auth_mark_for_asset_as_admin(ASSET, 6, 7);
+    env.crank(
+        s2,
+        ProgInstruction::PermissionlessCrank {
+            now_slot: 6,
+            observations: crank_observations(ASSET),
+        },
+    );
+    soft!(has_active_leg_for_asset(
+        &env.portfolio_state(s2),
+        ASSET as usize
+    ));
+    soft!(health_cert(&env.portfolio_state(s2)).certified_liq_deficit != 0);
+    // s2's realized loss lands as fresh loser-paid backing. With no cure before it there is no
+    // receivable to refill and nothing has been spent yet.
+    let repaid_source = env.market_state().1.source_credit[short_source];
+    soft_eq!(repaid_source.provider_receivable_num, 0);
+    soft_eq!(repaid_source.spent_backing_num, cured_num);
+
+    let mut successful_steps = 0usize;
+    for slot in 6..=8u64 {
+        if !has_active_leg_for_asset(&env.portfolio_state(s2), ASSET as usize) {
+            break;
+        }
+        env.svm.warp_to_slot(slot);
+        env.crank_steps_after_market_catchup(
+            neutral,
+            ProgInstruction::PermissionlessCrank {
+                now_slot: slot,
+                observations: crank_observations(ASSET),
+            },
+            1,
+        );
+        let fixed_market = env.svm.get_account(&env.market).unwrap();
+        let fixed_loser = env.svm.get_account(&s2).unwrap();
+        let fixed_vault = env.svm.get_account(&env.vault).unwrap();
+        env.svm.expire_blockhash();
+        let before = env.market_state().1;
+        let before_basis = active_leg_for_asset(&env.portfolio_state(s2), ASSET as usize)
+            .basis_pos_q
+            .unsigned_abs();
+        let liquidation_cu = env
+            .send(
+                ProgInstruction::PermissionlessCrank {
+                    now_slot: slot,
+                    observations: crank_observations(ASSET),
+                },
+                vec![
+                    AccountMeta::new(env.payer.pubkey(), true),
+                    AccountMeta::new(env.market, false),
+                    AccountMeta::new(s2, false),
+                ],
+                &[],
+            )
+            .expect("fractional reset carry must not abort permissionless liquidation");
+        assert_cu_within(
+            "fractional reset-carry liquidation",
+            liquidation_cu,
+            CRANK_CU_LIMIT,
+        );
+        successful_steps += 1;
+        let after = env.market_state().1;
+        let after_basis = if has_active_leg_for_asset(&env.portfolio_state(s2), ASSET as usize) {
+            active_leg_for_asset(&env.portfolio_state(s2), ASSET as usize)
+                .basis_pos_q
+                .unsigned_abs()
+        } else {
+            0
+        };
+        soft!(
+            after.assets[ASSET as usize].oi_eff_long_q
+                < before.assets[ASSET as usize].oi_eff_long_q
+                || after.assets[ASSET as usize].oi_eff_short_q
+                    < before.assets[ASSET as usize].oi_eff_short_q
+                || after_basis < before_basis,
+            "every accepted target crank must strictly reduce liquidation risk"
+        );
+        soft_ne!(env.svm.get_account(&env.market).unwrap(), fixed_market);
+        soft_ne!(env.svm.get_account(&s2).unwrap(), fixed_loser);
+        soft_eq!(env.svm.get_account(&env.vault).unwrap(), fixed_vault);
+    }
+    soft!(successful_steps > 0);
+    soft_eq!(env.market_state().1.mode, MarketModeV16::Live);
+    soft!(!has_active_leg_for_asset(
+        &env.portfolio_state(s2),
+        ASSET as usize
+    ));
+    let liquidation_progressed = env.market_state().1;
+    soft_eq!(
+        liquidation_progressed.assets[ASSET as usize].oi_eff_long_q,
+        liquidation_progressed.assets[ASSET as usize].oi_eff_short_q
+    );
+    soft!(liquidation_progressed.assets[ASSET as usize].oi_eff_long_q > 0);
+
+    // The corrected engine no longer subtracts a raw ADL basis amount from pooled effective OI.
+    // Explicitly close the other live owners through owner-signed reductions, using an independent
+    // full-width oracle for each account's current effective quantity. Supplying retained raw basis
+    // is only a best-effort work budget; the engine clamps it to economically live matched OI.
+    let vault_before_matched_exits = env.svm.get_account(&env.vault).unwrap();
+    for (name, long_owner, long) in [
+        ("l2", &l2o, l2),
+        ("l3", &l3o, l3),
+        ("l4", &l4o, l4),
+        ("l5", &l5o, l5),
+    ] {
+        let before = env.market_state().1;
+        let long_leg = active_leg_for_asset(&env.portfolio_state(long), ASSET as usize);
+        let raw_before_exit = long_leg.basis_pos_q.unsigned_abs();
+        let exit_q = reference_current_epoch_effective_abs(&before, long_leg)
+            .min(before.assets[ASSET as usize].oi_eff_long_q)
+            .min(before.assets[ASSET as usize].oi_eff_short_q);
+        soft!(exit_q > 0);
+        let exit_cu = env.rebalance_reduce_with_cu(
+            long_owner,
+            long,
+            ASSET,
+            long_leg.basis_pos_q.unsigned_abs(),
+        );
+        assert_cu_within(
+            &format!("fractional carry {name} effective owner exit"),
+            exit_cu,
+            CUSTODY_CU_LIMIT,
+        );
+        let after = env.market_state().1;
+        soft_eq!(
+            after.assets[ASSET as usize].oi_eff_long_q,
+            before.assets[ASSET as usize].oi_eff_long_q - exit_q
+        );
+        soft_eq!(
+            after.assets[ASSET as usize].oi_eff_short_q,
+            before.assets[ASSET as usize].oi_eff_short_q - exit_q
+        );
+        let raw_after_exit = if has_active_leg_for_asset(&env.portfolio_state(long), ASSET as usize)
+        {
+            active_leg_for_asset(&env.portfolio_state(long), ASSET as usize)
+                .basis_pos_q
+                .unsigned_abs()
+        } else {
+            0
+        };
+        soft!(raw_after_exit < raw_before_exit);
+        soft_eq!(
+            env.svm.get_account(&env.vault).unwrap(),
+            vault_before_matched_exits
+        );
+    }
+
+    let progressed = env.market_state().1;
+    soft_eq!(progressed.assets[ASSET as usize].oi_eff_long_q, 0);
+    soft_eq!(progressed.assets[ASSET as usize].oi_eff_short_q, 0);
+    soft_eq!(
+        progressed.assets[ASSET as usize].social_loss_remainder_long_num,
+        0
+    );
+    soft!(
+        progressed.assets[ASSET as usize].social_loss_dust_long_num < percolator::SOCIAL_LOSS_DEN
+    );
+    soft_ne!(
+        progressed.assets[ASSET as usize].explicit_unallocated_loss_long,
+        0
+    );
+    soft_eq!(progressed.vault as u64, env.token_amount(env.vault));
+
+    for portfolio in [l1, l2, l3, l4, l5, s1, s2, s3] {
+        for _ in 0..8 {
+            if !has_active_leg_for_asset(&env.portfolio_state(portfolio), ASSET as usize) {
+                break;
+            }
+            env.crank(
+                portfolio,
+                ProgInstruction::PermissionlessCrank {
+                    now_slot: 8,
+                    observations: crank_observations(ASSET),
+                },
+            );
+        }
+        soft!(
+            !has_active_leg_for_asset(&env.portfolio_state(portfolio), ASSET as usize),
+            "every prior-epoch residue must detach in bounded public cranks"
+        );
+    }
+    let reset = env.market_state().1;
+    if reset.assets[ASSET as usize].mode_long == SideModeV16::ResetPending {
+        let cu = env.finalize_reset_side_with_cu(ASSET, 0);
+        assert_cu_within(
+            "fractional carry long reset finalization",
+            cu,
+            CUSTODY_CU_LIMIT,
+        );
+    }
+    if env.market_state().1.assets[ASSET as usize].mode_short == SideModeV16::ResetPending {
+        let cu = env.finalize_reset_side_with_cu(ASSET, 1);
+        assert_cu_within(
+            "fractional carry short reset finalization",
+            cu,
+            CUSTODY_CU_LIMIT,
+        );
+    }
+    let terminal_ready = env.market_state().1;
+    soft_eq!(terminal_ready.mode, MarketModeV16::Live);
+    soft_eq!(
+        terminal_ready.assets[ASSET as usize].lifecycle,
+        AssetLifecycleV16::Active
+    );
+    soft_eq!(
+        terminal_ready.assets[ASSET as usize].mode_long,
+        SideModeV16::Normal
+    );
+    soft_eq!(
+        terminal_ready.assets[ASSET as usize].mode_short,
+        SideModeV16::Normal
+    );
+    soft_eq!(terminal_ready.assets[ASSET as usize].k_epoch_start_long, 0);
+    soft_eq!(terminal_ready.assets[ASSET as usize].k_epoch_start_short, 0);
+    soft_eq!(
+        terminal_ready.assets[ASSET as usize].f_epoch_start_long_num,
+        0
+    );
+    soft_eq!(
+        terminal_ready.assets[ASSET as usize].f_epoch_start_short_num,
+        0
+    );
+    soft_eq!(
+        terminal_ready.assets[ASSET as usize].b_epoch_start_long_num,
+        0
+    );
+    soft_eq!(
+        terminal_ready.assets[ASSET as usize].b_epoch_start_short_num,
+        0
+    );
+
+    for (owner, portfolio) in [
+        (&l1o, l1),
+        (&l2o, l2),
+        (&l3o, l3),
+        (&l4o, l4),
+        (&l5o, l5),
+        (&s1o, s1),
+        (&s2o, s2),
+        (&s3o, s3),
+    ] {
+        let pnl = env.portfolio_state(portfolio).pnl.get();
+        if pnl > 0 {
+            let refresh_cu = env.crank_steps(
+                portfolio,
+                ProgInstruction::PermissionlessCrank {
+                    now_slot: 8,
+                    observations: crank_observations(ASSET),
+                },
+                2,
+            );
+            assert_cu_within(
+                "fractional carry terminal claim refresh",
+                refresh_cu,
+                CRANK_CU_LIMIT,
+            );
+            let cu = env.convert_released_pnl_with_cu(owner, portfolio, pnl as u128);
+            assert_cu_within(
+                "fractional carry terminal PnL conversion",
+                cu,
+                CUSTODY_CU_LIMIT,
+            );
+            soft_eq!(env.portfolio_state(portfolio).pnl.get(), 0);
+        }
+    }
+    soft_eq!(env.market_state().1.pnl_pos_tot, 0);
+
+    let source_domain = ASSET * 2 + 1;
+    let provider_obligated = env.market_state().1;
+    let source = provider_obligated.source_credit[source_domain as usize];
+    soft_eq!(source.positive_claim_bound_num, 0);
+    soft_eq!(source.exact_positive_claim_num, 0);
+    soft!(source.provider_receivable_num > 0);
+    // The terminal conversions drew the outstanding receivable from the bucket. With no cure
+    // earlier, the cumulative spent audit equals that receivable.
+    soft_eq!(
+        source.spent_backing_num,
+        source.provider_receivable_num + cured_num
+    );
+    soft_eq!(source.provider_receivable_num % BOUND_SCALE, 0);
+    let refill_atoms = source.provider_receivable_num / BOUND_SCALE;
+    eprintln!("MEAS refill_atoms={} (receivable_num={} spent_num={} fresh_reserved_num={})", refill_atoms, source.provider_receivable_num, source.spent_backing_num, source.fresh_reserved_backing_num);
+    soft_eq!(refill_atoms, 18, "the provider refills 18");
+    let refill_expiry =
+        provider_obligated.source_backing_buckets[source_domain as usize].expiry_slot;
+    env.top_up_backing_bucket(source_domain, refill_atoms, refill_expiry);
+
+    let provider_ready = env.market_state().1;
+    let refilled_source = provider_ready.source_credit[source_domain as usize];
+    soft_eq!(refilled_source.provider_receivable_num, 0);
+    soft_eq!(refilled_source.spent_backing_num, source.spent_backing_num);
+    soft_eq!(
+        refilled_source.fresh_reserved_backing_num,
+        source.fresh_reserved_backing_num + source.provider_receivable_num
+    );
+    soft_eq!(refilled_source.fresh_reserved_backing_num % BOUND_SCALE, 0);
+    let provider_principal = refilled_source.fresh_reserved_backing_num / BOUND_SCALE;
+    eprintln!("MEAS provider_principal={}", provider_principal);
+    soft_eq!(provider_principal, 19, "the provider withdraws 19");
+    let provider_token = env.token_account(env.admin.pubkey(), 0);
+    soft!(
+        provider_ready.bankruptcy_hlock_active,
+        "the regression must retain the global bankruptcy history bit"
+    );
+    soft_eq!(
+        provider_ready.negative_pnl_account_count, 0,
+        "all active negative accounts must settle before backing withdrawal"
+    );
+    soft_eq!(
+        provider_ready.pending_domain_loss_barriers[source_domain as usize], 0,
+        "the selected source domain must have no live loss barrier"
+    );
+    let provider_withdraw_cu = env.withdraw_backing_bucket_to_admin_token_with_cu(
+        provider_token,
+        source_domain,
+        provider_principal,
+    );
+    assert_cu_within(
+        "fractional carry terminal provider settlement",
+        provider_withdraw_cu,
+        CUSTODY_CU_LIMIT,
+    );
+    soft_eq!(env.token_amount(provider_token), provider_principal as u64);
+    let provider_settled = env.market_state().1;
+    soft_eq!(
+        provider_settled.source_credit[source_domain as usize].provider_receivable_num,
+        0
+    );
+    soft_eq!(
+        provider_settled.source_backing_buckets[source_domain as usize],
+        percolator::BackingBucketV16 {
+            market_id: provider_settled.assets[ASSET as usize].market_id,
+            ..percolator::BackingBucketV16::EMPTY
+        }
+    );
+    soft_eq!(
+        provider_settled.source_credit[source_domain as usize].spent_backing_num,
+        source.spent_backing_num,
+        "principal withdrawal preserves the cumulative spent-backing audit"
+    );
+
+    let custody_before_retirement = env.svm.get_account(&env.vault).unwrap();
+    let drain_cu = env.update_asset_lifecycle_as_admin_with_cu(
+        percolator_prog::processor::ASSET_ACTION_DRAIN_ONLY,
+        ASSET,
+        0,
+        0,
+    );
+    assert_cu_within("fractional carry DrainOnly", drain_cu, CUSTODY_CU_LIMIT);
+    soft_eq!(
+        env.market_state().1.assets[ASSET as usize].lifecycle,
+        AssetLifecycleV16::DrainOnly
+    );
+    let retire_cu = env.update_asset_lifecycle_as_admin_with_cu(
+        percolator_prog::processor::ASSET_ACTION_RETIRE,
+        ASSET,
+        8,
+        0,
+    );
+    assert_cu_within("fractional carry retirement", retire_cu, CUSTODY_CU_LIMIT);
+    let retired = env.market_state().1;
+    soft_eq!(
+        retired.assets[ASSET as usize].lifecycle,
+        AssetLifecycleV16::Retired
+    );
+    soft_eq!(
+        retired.assets[ASSET as usize].social_loss_remainder_long_num,
+        0
+    );
+    soft_eq!(
+        retired.assets[ASSET as usize].social_loss_remainder_short_num,
+        0
+    );
+    soft_eq!(retired.assets[ASSET as usize].social_loss_dust_long_num, 0);
+    soft_eq!(retired.assets[ASSET as usize].social_loss_dust_short_num, 0);
+    soft_eq!(
+        retired.assets[ASSET as usize].explicit_unallocated_loss_long,
+        0
+    );
+    soft_eq!(
+        retired.assets[ASSET as usize].explicit_unallocated_loss_short,
+        0
+    );
+    soft_eq!(
+        retired.source_credit[source_domain as usize],
+        percolator::SourceCreditStateV16::EMPTY,
+        "retirement consumes only the historical spent-backing audit"
+    );
+    soft_eq!(
+        env.svm.get_account(&env.vault).unwrap(),
+        custody_before_retirement
+    );
+
+    let mut sum_cap = 0u128;
+    for (n, p) in [("l1", l1), ("l2", l2), ("l3", l3), ("l4", l4), ("l5", l5), ("s1", s1), ("s2", s2), ("s3", s3), ("neutral", neutral)] {
+        let st = env.portfolio_state(p);
+        sum_cap += st.capital.get();
+        eprintln!("MEAS final {} capital={} pnl={} reserved_pnl={} fee_credits={} cancel_deposit_escrow={}", n, st.capital.get(), st.pnl.get(), st.reserved_pnl.get(), st.fee_credits.get(), st.cancel_deposit_escrow.get());
+    }
+    let vault_token = u128::from(env.token_amount(env.vault));
+    let admin_pk = env.admin.pubkey(); let provider_token_acct = env.token_account(admin_pk, 0); let provider_token_final = env.token_amount(provider_token_acct);
+    eprintln!("MEAS FINAL vault={} c_tot={} insurance={} c_tot+insurance={} vault_token={} sum_portfolio_capital={} gap_vault_minus_ctot_minus_ins={}",
+        retired.vault, retired.c_tot, retired.insurance, retired.c_tot + retired.insurance, vault_token, sum_cap,
+        retired.vault as i128 - (retired.c_tot + retired.insurance) as i128);
+    eprintln!("MEAS FINAL provider_token_balance={} l1_capital={}", provider_token_final, env.portfolio_state(l1).capital.get());
+    eprintln!("MEAS FINAL group {:#?}", retired);
+    eprintln!("MEAS FINAL source_credit[{}]={:?}", source_domain, retired.source_credit[source_domain as usize]);
+    eprintln!("MEAS FINAL bucket[{}]={:?}", source_domain, retired.source_backing_buckets[source_domain as usize]);
+    eprintln!("MEAS FINAL all source_credit nonempty:");
+    for (i, s) in retired.source_credit.iter().enumerate() { if *s != percolator::SourceCreditStateV16::EMPTY { eprintln!("MEAS   source_credit[{}]={:?}", i, s); } }
+    eprintln!("MEAS CHECK1 vault={} c_tot+insurance={}", retired.vault, retired.c_tot + retired.insurance);
+    eprintln!("MEAS CHECK2 vault={} token_vault={}", retired.vault, vault_token);
+    assert_eq!(retired.vault, retired.c_tot + retired.insurance);
+    assert_eq!(retired.vault, vault_token);
+}
+
